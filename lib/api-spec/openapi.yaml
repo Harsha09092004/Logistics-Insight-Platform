@@ -1,22 +1,30 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: FreightFlow - Freight Invoice Automation & Reconciliation API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: invoices
+    description: Freight invoice management
+  - name: vendors
+    description: Vendor and carrier management
+  - name: shipments
+    description: Shipment record management
+  - name: reconciliation
+    description: Invoice reconciliation operations
+  - name: dashboard
+    description: Dashboard and analytics data
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +32,370 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: List all freight invoices
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, matched, disputed, paid, overdue]
+        - name: vendorId
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceListResponse"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      summary: Create a new freight invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvoiceRequest"
+      responses:
+        "201":
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      summary: Get invoice by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+    patch:
+      operationId: updateInvoice
+      tags: [invoices]
+      summary: Update invoice status or details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInvoiceRequest"
+      responses:
+        "200":
+          description: Invoice updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+    delete:
+      operationId: deleteInvoice
+      tags: [invoices]
+      summary: Delete an invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Invoice deleted
+
+  /vendors:
+    get:
+      operationId: listVendors
+      tags: [vendors]
+      summary: List all vendors/carriers
+      responses:
+        "200":
+          description: List of vendors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vendor"
+    post:
+      operationId: createVendor
+      tags: [vendors]
+      summary: Create a new vendor/carrier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVendorRequest"
+      responses:
+        "201":
+          description: Vendor created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+
+  /vendors/{id}:
+    get:
+      operationId: getVendor
+      tags: [vendors]
+      summary: Get vendor by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Vendor details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+    patch:
+      operationId: updateVendor
+      tags: [vendors]
+      summary: Update vendor details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVendorRequest"
+      responses:
+        "200":
+          description: Vendor updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+
+  /shipments:
+    get:
+      operationId: listShipments
+      tags: [shipments]
+      summary: List all shipments
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [in_transit, delivered, delayed, cancelled]
+        - name: vendorId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of shipments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Shipment"
+    post:
+      operationId: createShipment
+      tags: [shipments]
+      summary: Create a new shipment record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShipmentRequest"
+      responses:
+        "201":
+          description: Shipment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+
+  /shipments/{id}:
+    get:
+      operationId: getShipment
+      tags: [shipments]
+      summary: Get shipment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Shipment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+    patch:
+      operationId: updateShipment
+      tags: [shipments]
+      summary: Update shipment status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateShipmentRequest"
+      responses:
+        "200":
+          description: Shipment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+
+  /reconciliation/run:
+    post:
+      operationId: runReconciliation
+      tags: [reconciliation]
+      summary: Run reconciliation for invoices against shipments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReconciliationRequest"
+      responses:
+        "200":
+          description: Reconciliation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconciliationResult"
+
+  /reconciliation/discrepancies:
+    get:
+      operationId: listDiscrepancies
+      tags: [reconciliation]
+      summary: List all reconciliation discrepancies
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, resolved, escalated]
+      responses:
+        "200":
+          description: List of discrepancies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Discrepancy"
+
+  /reconciliation/discrepancies/{id}/resolve:
+    patch:
+      operationId: resolveDiscrepancy
+      tags: [reconciliation]
+      summary: Resolve a discrepancy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveDiscrepancyRequest"
+      responses:
+        "200":
+          description: Discrepancy resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Discrepancy"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard summary statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/trends:
+    get:
+      operationId: getFreightTrends
+      tags: [dashboard]
+      summary: Get freight cost trends over time
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter]
+            default: month
+      responses:
+        "200":
+          description: Freight trend data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendDataPoint"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +403,476 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        invoiceNumber:
+          type: string
+        vendorId:
+          type: integer
+        vendorName:
+          type: string
+        shipmentId:
+          type: integer
+          nullable: true
+        amount:
+          type: number
+        currency:
+          type: string
+          default: INR
+        status:
+          type: string
+          enum: [pending, matched, disputed, paid, overdue]
+        invoiceDate:
+          type: string
+          format: date
+        dueDate:
+          type: string
+          format: date
+        description:
+          type: string
+          nullable: true
+        freightCharges:
+          type: number
+        fuelSurcharge:
+          type: number
+          nullable: true
+        otherCharges:
+          type: number
+          nullable: true
+        gstAmount:
+          type: number
+          nullable: true
+        discrepancyNotes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - invoiceNumber
+        - vendorId
+        - vendorName
+        - amount
+        - currency
+        - status
+        - invoiceDate
+        - dueDate
+        - freightCharges
+        - createdAt
+        - updatedAt
+
+    InvoiceListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [data, total, page, limit]
+
+    CreateInvoiceRequest:
+      type: object
+      properties:
+        invoiceNumber:
+          type: string
+        vendorId:
+          type: integer
+        shipmentId:
+          type: integer
+          nullable: true
+        amount:
+          type: number
+        currency:
+          type: string
+          default: INR
+        invoiceDate:
+          type: string
+          format: date
+        dueDate:
+          type: string
+          format: date
+        description:
+          type: string
+          nullable: true
+        freightCharges:
+          type: number
+        fuelSurcharge:
+          type: number
+          nullable: true
+        otherCharges:
+          type: number
+          nullable: true
+        gstAmount:
+          type: number
+          nullable: true
+      required:
+        - invoiceNumber
+        - vendorId
+        - amount
+        - invoiceDate
+        - dueDate
+        - freightCharges
+
+    UpdateInvoiceRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, matched, disputed, paid, overdue]
+        shipmentId:
+          type: integer
+          nullable: true
+        discrepancyNotes:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        fuelSurcharge:
+          type: number
+          nullable: true
+        otherCharges:
+          type: number
+          nullable: true
+        gstAmount:
+          type: number
+          nullable: true
+
+    Vendor:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        gstin:
+          type: string
+          nullable: true
+        contactEmail:
+          type: string
+          nullable: true
+        contactPhone:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        paymentTermsDays:
+          type: integer
+          default: 30
+        category:
+          type: string
+          enum: [road, rail, air, sea, multimodal]
+        totalInvoices:
+          type: integer
+          nullable: true
+        totalAmountDue:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, paymentTermsDays, category, createdAt]
+
+    CreateVendorRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        gstin:
+          type: string
+          nullable: true
+        contactEmail:
+          type: string
+          nullable: true
+        contactPhone:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        paymentTermsDays:
+          type: integer
+          default: 30
+        category:
+          type: string
+          enum: [road, rail, air, sea, multimodal]
+      required: [name, category]
+
+    UpdateVendorRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        gstin:
+          type: string
+          nullable: true
+        contactEmail:
+          type: string
+          nullable: true
+        contactPhone:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        paymentTermsDays:
+          type: integer
+
+    Shipment:
+      type: object
+      properties:
+        id:
+          type: integer
+        shipmentNumber:
+          type: string
+        vendorId:
+          type: integer
+        vendorName:
+          type: string
+        origin:
+          type: string
+        destination:
+          type: string
+        status:
+          type: string
+          enum: [in_transit, delivered, delayed, cancelled]
+        scheduledDelivery:
+          type: string
+          format: date
+          nullable: true
+        actualDelivery:
+          type: string
+          format: date
+          nullable: true
+        agreedFreightCost:
+          type: number
+        weightKg:
+          type: number
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - shipmentNumber
+        - vendorId
+        - vendorName
+        - origin
+        - destination
+        - status
+        - agreedFreightCost
+        - createdAt
+
+    CreateShipmentRequest:
+      type: object
+      properties:
+        shipmentNumber:
+          type: string
+        vendorId:
+          type: integer
+        origin:
+          type: string
+        destination:
+          type: string
+        scheduledDelivery:
+          type: string
+          format: date
+          nullable: true
+        agreedFreightCost:
+          type: number
+        weightKg:
+          type: number
+          nullable: true
+        description:
+          type: string
+          nullable: true
+      required:
+        - shipmentNumber
+        - vendorId
+        - origin
+        - destination
+        - agreedFreightCost
+
+    UpdateShipmentRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [in_transit, delivered, delayed, cancelled]
+        actualDelivery:
+          type: string
+          format: date
+          nullable: true
+        agreedFreightCost:
+          type: number
+
+    ReconciliationRequest:
+      type: object
+      properties:
+        invoiceIds:
+          type: array
+          items:
+            type: integer
+      required: [invoiceIds]
+
+    ReconciliationResult:
+      type: object
+      properties:
+        processed:
+          type: integer
+        matched:
+          type: integer
+        disputed:
+          type: integer
+        discrepanciesFound:
+          type: integer
+        totalVarianceAmount:
+          type: number
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReconciliationDetail"
+      required: [processed, matched, disputed, discrepanciesFound, totalVarianceAmount, details]
+
+    ReconciliationDetail:
+      type: object
+      properties:
+        invoiceId:
+          type: integer
+        invoiceNumber:
+          type: string
+        status:
+          type: string
+        varianceAmount:
+          type: number
+        reason:
+          type: string
+      required: [invoiceId, invoiceNumber, status, varianceAmount, reason]
+
+    Discrepancy:
+      type: object
+      properties:
+        id:
+          type: integer
+        invoiceId:
+          type: integer
+        invoiceNumber:
+          type: string
+        vendorName:
+          type: string
+        type:
+          type: string
+          enum: [amount_mismatch, duplicate, missing_shipment, rate_deviation, extra_charges]
+        invoicedAmount:
+          type: number
+        expectedAmount:
+          type: number
+        varianceAmount:
+          type: number
+        status:
+          type: string
+          enum: [open, resolved, escalated]
+        description:
+          type: string
+          nullable: true
+        resolution:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - invoiceId
+        - invoiceNumber
+        - vendorName
+        - type
+        - invoicedAmount
+        - expectedAmount
+        - varianceAmount
+        - status
+        - createdAt
+
+    ResolveDiscrepancyRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [resolved, escalated]
+        resolution:
+          type: string
+      required: [status, resolution]
+
+    DashboardStats:
+      type: object
+      properties:
+        totalInvoices:
+          type: integer
+        pendingInvoices:
+          type: integer
+        disputedInvoices:
+          type: integer
+        overdueInvoices:
+          type: integer
+        totalAmountPending:
+          type: number
+        totalAmountDisputed:
+          type: number
+        totalAmountOverdue:
+          type: number
+        reconciliationRate:
+          type: number
+        openDiscrepancies:
+          type: integer
+        totalVendors:
+          type: integer
+        activeShipments:
+          type: integer
+        delayedShipments:
+          type: integer
+      required:
+        - totalInvoices
+        - pendingInvoices
+        - disputedInvoices
+        - overdueInvoices
+        - totalAmountPending
+        - totalAmountDisputed
+        - totalAmountOverdue
+        - reconciliationRate
+        - openDiscrepancies
+        - totalVendors
+        - activeShipments
+        - delayedShipments
+
+    TrendDataPoint:
+      type: object
+      properties:
+        period:
+          type: string
+        totalFreightCost:
+          type: number
+        invoiceCount:
+          type: integer
+        avgInvoiceAmount:
+          type: number
+        disputeRate:
+          type: number
+      required: [period, totalFreightCost, invoiceCount, avgInvoiceAmount, disputeRate]

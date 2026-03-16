@@ -1,0 +1,16 @@
+packages:
+  "recharts": "For dashboard charts and trend visualizations"
+  "react-hook-form": "For form state management"
+  "@hookform/resolvers": "For Zod schema validation in forms"
+  "date-fns": "For human-readable date formatting"
+  "clsx": "For conditional class merging"
+  "tailwind-merge": "For conflict-free tailwind class merging"
+
+images:
+  - path: "artifacts/freightflow/public/images/logo.png"
+    description: "Modern, minimal geometric logo mark for a logistics and freight company, abstract boxes and arrows, deep blue and teal, transparent background"
+    aspect_ratio: "1:1"
+
+notes:
+  - Using @workspace/api-client-react for all API interactions
+  - Relying on INR currency formatting and Indian number system

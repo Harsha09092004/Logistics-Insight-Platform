@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "FreightFlow — Freight Invoice Automation"
+version = "1.0.0"
+id = "artifacts/freightflow"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 22369
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/freightflow run dev"
+
+[services.env]
+PORT = "22369"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/freightflow", "run", "build"]
+publicDir = "artifacts/freightflow/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

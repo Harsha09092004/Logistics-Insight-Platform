@@ -16,23 +16,42 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
+## Project: FreightFlow — Freight Invoice Automation & Reconciliation
+
+Full-stack logistics SaaS platform for Indian SMEs. Solves freight invoice visibility, reconciliation automation, and discrepancy management.
+
+### Features
+- Dashboard with stats (pending amounts in INR, dispute rate, reconciliation rate, shipment tracking)
+- Freight cost trend charts by month/week/quarter
+- Invoice management (create, filter by status/vendor, update status, delete)
+- Vendor/Carrier management with GSTIN tracking
+- Shipment tracking linked to invoices
+- Automated reconciliation engine comparing invoice amounts vs. agreed freight costs
+- Discrepancy management with resolve/escalate workflow
+
 ## Structure
 
 ```text
 artifacts-monorepo/
 ├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
+│   ├── api-server/         # Express API server
+│   │   └── src/routes/     # invoices, vendors, shipments, reconciliation, dashboard
+│   └── freightflow/        # React + Vite frontend
+│       └── src/
+│           ├── pages/      # Dashboard, Invoices, Vendors, Shipments, Reconciliation
+│           ├── components/ # Layout (sidebar, app-layout), UI (modal, status-badge)
+│           └── index.css   # Theme with blue primary, clean light mode
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+│       └── src/schema/     # vendors, shipments, invoices, discrepancies tables
+├── scripts/                # Utility scripts
+├── pnpm-workspace.yaml
+├── tsconfig.base.json
+├── tsconfig.json
+└── package.json
 ```
 
 ## TypeScript & Composite Projects
@@ -52,45 +71,33 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 
 ### `artifacts/api-server` (`@workspace/api-server`)
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+Express 5 API server. Routes:
+- `GET/POST /api/invoices` — list and create invoices
+- `GET/PATCH/DELETE /api/invoices/:id` — invoice CRUD
+- `GET/POST /api/vendors` — vendor management
+- `GET/PATCH /api/vendors/:id`
+- `GET/POST /api/shipments` — shipment tracking
+- `GET/PATCH /api/shipments/:id`
+- `POST /api/reconciliation/run` — run reconciliation engine
+- `GET /api/reconciliation/discrepancies` — list discrepancies
+- `PATCH /api/reconciliation/discrepancies/:id/resolve`
+- `GET /api/dashboard/stats` — summary statistics
+- `GET /api/dashboard/trends` — freight cost trends
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+### `artifacts/freightflow` (`@workspace/freightflow`)
+
+React + Vite frontend. Wouter for routing, React Query for data fetching, Recharts for charts, react-hook-form for forms.
 
 ### `lib/db` (`@workspace/db`)
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
-
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
+Database schema:
+- `vendors` — carrier/vendor records with GSTIN, category (road/rail/air/sea/multimodal)
+- `shipments` — shipment tracking with origin, destination, agreed freight cost
+- `invoices` — freight invoices with status (pending/matched/disputed/paid/overdue)
+- `discrepancies` — reconciliation discrepancies with type and resolution
 
 Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
 
 ### `lib/api-spec` (`@workspace/api-spec`)
 
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
 Run codegen: `pnpm --filter @workspace/api-spec run codegen`
-
-### `lib/api-zod` (`@workspace/api-zod`)
-
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
-
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
