@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * FreightFlow - Freight Invoice Automation & Reconciliation API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 
 export type CreateVendorRequestCategory =

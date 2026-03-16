@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Api
-  version: 0.1.0
+  version: 0.2.0
   description: FreightFlow - Freight Invoice Automation & Reconciliation API
 servers:
   - url: /api
@@ -9,6 +9,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
   - name: invoices
     description: Freight invoice management
   - name: vendors
@@ -17,6 +19,10 @@ tags:
     description: Shipment record management
   - name: reconciliation
     description: Invoice reconciliation operations
+  - name: payments
+    description: Payment tracking
+  - name: reports
+    description: Reports and analytics
   - name: dashboard
     description: Dashboard and analytics data
 paths:
@@ -32,6 +38,53 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/user:
+    get:
+      operationId: getCurrentAuthUser
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Authenticated user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+
+  /mobile-auth/token-exchange:
+    post:
+      operationId: exchangeMobileAuthorizationCode
+      tags: [auth]
+      summary: Exchange mobile auth code for session token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeMobileAuthorizationCodeBody"
+      responses:
+        "200":
+          description: Session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeMobileAuthorizationCodeResponse"
+
+  /mobile-auth/session:
+    delete:
+      operationId: logoutMobileSession
+      tags: [auth]
+      summary: Logout mobile session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutMobileSessionResponse"
 
   /invoices:
     get:
@@ -138,6 +191,25 @@ paths:
         "204":
           description: Invoice deleted
 
+  /invoices/bulk:
+    post:
+      operationId: bulkUpdateInvoices
+      tags: [invoices]
+      summary: Bulk update multiple invoices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkUpdateInvoicesRequest"
+      responses:
+        "200":
+          description: Bulk update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkUpdateResult"
+
   /vendors:
     get:
       operationId: listVendors
@@ -211,6 +283,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Vendor"
+
+  /vendors/{id}/performance:
+    get:
+      operationId: getVendorPerformance
+      tags: [vendors]
+      summary: Get vendor performance metrics
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Vendor performance data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorPerformance"
 
   /shipments:
     get:
@@ -361,6 +452,120 @@ paths:
               schema:
                 $ref: "#/components/schemas/Discrepancy"
 
+  /payments:
+    get:
+      operationId: listPayments
+      tags: [payments]
+      summary: List all payments
+      parameters:
+        - name: vendorId
+          in: query
+          schema:
+            type: integer
+        - name: invoiceId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+    post:
+      operationId: createPayment
+      tags: [payments]
+      summary: Record a payment for an invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequest"
+      responses:
+        "201":
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /reports/aging:
+    get:
+      operationId: getAgingReport
+      tags: [reports]
+      summary: Get invoice aging report (0-30, 31-60, 61-90, 90+ days)
+      responses:
+        "200":
+          description: Aging report data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgingReport"
+
+  /reports/gst:
+    get:
+      operationId: getGstReport
+      tags: [reports]
+      summary: Get GST reconciliation report
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: string
+            description: YYYY-MM format
+      responses:
+        "200":
+          description: GST report data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GstReport"
+
+  /reports/vendor-performance:
+    get:
+      operationId: getVendorPerformanceReport
+      tags: [reports]
+      summary: Get vendor performance comparison
+      responses:
+        "200":
+          description: Vendor performance comparison
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VendorPerformance"
+
+  /reports/export/invoices:
+    get:
+      operationId: exportInvoicesCsv
+      tags: [reports]
+      summary: Export invoices as CSV
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+        - name: endDate
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+
   /dashboard/stats:
     get:
       operationId: getDashboardStats
@@ -405,6 +610,53 @@ components:
           type: string
       required: [status]
 
+    ExchangeMobileAuthorizationCodeBody:
+      type: object
+      properties:
+        code:
+          type: string
+        codeVerifier:
+          type: string
+        state:
+          type: string
+        nonce:
+          type: string
+        redirectUri:
+          type: string
+      required: [code, codeVerifier, state, nonce, redirectUri]
+
+    ExchangeMobileAuthorizationCodeResponse:
+      type: object
+      properties:
+        sessionToken:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUser"
+      required: [sessionToken, user]
+
+    LogoutMobileSessionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required: [success]
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          nullable: true
+        profileImage:
+          type: string
+          nullable: true
+        username:
+          type: string
+          nullable: true
+      required: [id]
+
     Invoice:
       type: object
       properties:
@@ -447,8 +699,17 @@ components:
         gstAmount:
           type: number
           nullable: true
+        tdsAmount:
+          type: number
+          nullable: true
+        hsnCode:
+          type: string
+          nullable: true
         discrepancyNotes:
           type: string
+          nullable: true
+        daysOverdue:
+          type: integer
           nullable: true
         createdAt:
           type: string
@@ -520,6 +781,12 @@ components:
         gstAmount:
           type: number
           nullable: true
+        tdsAmount:
+          type: number
+          nullable: true
+        hsnCode:
+          type: string
+          nullable: true
       required:
         - invoiceNumber
         - vendorId
@@ -551,6 +818,40 @@ components:
         gstAmount:
           type: number
           nullable: true
+        tdsAmount:
+          type: number
+          nullable: true
+        hsnCode:
+          type: string
+          nullable: true
+
+    BulkUpdateInvoicesRequest:
+      type: object
+      properties:
+        invoiceIds:
+          type: array
+          items:
+            type: integer
+        action:
+          type: string
+          enum: [mark_paid, mark_overdue, mark_disputed, delete, reconcile]
+        notes:
+          type: string
+          nullable: true
+      required: [invoiceIds, action]
+
+    BulkUpdateResult:
+      type: object
+      properties:
+        processed:
+          type: integer
+        succeeded:
+          type: integer
+        failed:
+          type: integer
+        message:
+          type: string
+      required: [processed, succeeded, failed, message]
 
     Vendor:
       type: object
@@ -632,6 +933,45 @@ components:
           nullable: true
         paymentTermsDays:
           type: integer
+
+    VendorPerformance:
+      type: object
+      properties:
+        vendorId:
+          type: integer
+        vendorName:
+          type: string
+        category:
+          type: string
+        totalInvoices:
+          type: integer
+        totalAmount:
+          type: number
+        disputeRate:
+          type: number
+        onTimeDeliveryRate:
+          type: number
+        avgDelayDays:
+          type: number
+        avgInvoiceAmount:
+          type: number
+        overdueAmount:
+          type: number
+        performanceScore:
+          type: number
+          description: 0-100 score
+      required:
+        - vendorId
+        - vendorName
+        - category
+        - totalInvoices
+        - totalAmount
+        - disputeRate
+        - onTimeDeliveryRate
+        - avgDelayDays
+        - avgInvoiceAmount
+        - overdueAmount
+        - performanceScore
 
     Shipment:
       type: object
@@ -821,6 +1161,173 @@ components:
           type: string
       required: [status, resolution]
 
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+        invoiceId:
+          type: integer
+        invoiceNumber:
+          type: string
+          nullable: true
+        vendorId:
+          type: integer
+        vendorName:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        currency:
+          type: string
+          default: INR
+        paymentDate:
+          type: string
+          format: date
+        paymentMethod:
+          type: string
+          enum: [bank_transfer, cheque, upi, rtgs, neft, cash]
+        referenceNumber:
+          type: string
+          nullable: true
+        tdsDeducted:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - invoiceId
+        - vendorId
+        - amount
+        - currency
+        - paymentDate
+        - paymentMethod
+        - createdAt
+
+    CreatePaymentRequest:
+      type: object
+      properties:
+        invoiceId:
+          type: integer
+        amount:
+          type: number
+        paymentDate:
+          type: string
+          format: date
+        paymentMethod:
+          type: string
+          enum: [bank_transfer, cheque, upi, rtgs, neft, cash]
+          default: bank_transfer
+        referenceNumber:
+          type: string
+          nullable: true
+        tdsDeducted:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required: [invoiceId, amount, paymentDate, paymentMethod]
+
+    AgingReport:
+      type: object
+      properties:
+        current:
+          $ref: "#/components/schemas/AgingBucket"
+        days30:
+          $ref: "#/components/schemas/AgingBucket"
+        days60:
+          $ref: "#/components/schemas/AgingBucket"
+        days90:
+          $ref: "#/components/schemas/AgingBucket"
+        over90:
+          $ref: "#/components/schemas/AgingBucket"
+        totalOutstanding:
+          type: number
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgingDetail"
+      required: [current, days30, days60, days90, over90, totalOutstanding, details]
+
+    AgingBucket:
+      type: object
+      properties:
+        count:
+          type: integer
+        amount:
+          type: number
+        percentage:
+          type: number
+      required: [count, amount, percentage]
+
+    AgingDetail:
+      type: object
+      properties:
+        invoiceId:
+          type: integer
+        invoiceNumber:
+          type: string
+        vendorName:
+          type: string
+        amount:
+          type: number
+        dueDate:
+          type: string
+        daysOverdue:
+          type: integer
+        bucket:
+          type: string
+      required: [invoiceId, invoiceNumber, vendorName, amount, dueDate, daysOverdue, bucket]
+
+    GstReport:
+      type: object
+      properties:
+        month:
+          type: string
+        totalTaxableAmount:
+          type: number
+        totalGstCollected:
+          type: number
+        totalTdsDeducted:
+          type: number
+        invoiceCount:
+          type: integer
+        gstBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/GstVendorLine"
+      required: [month, totalTaxableAmount, totalGstCollected, totalTdsDeducted, invoiceCount, gstBreakdown]
+
+    GstVendorLine:
+      type: object
+      properties:
+        vendorId:
+          type: integer
+        vendorName:
+          type: string
+        gstin:
+          type: string
+          nullable: true
+        invoiceCount:
+          type: integer
+        taxableAmount:
+          type: number
+        gstAmount:
+          type: number
+        tdsAmount:
+          type: number
+        hsnCodes:
+          type: array
+          items:
+            type: string
+      required: [vendorId, vendorName, invoiceCount, taxableAmount, gstAmount, tdsAmount, hsnCodes]
+
     DashboardStats:
       type: object
       properties:
@@ -838,6 +1345,8 @@ components:
           type: number
         totalAmountOverdue:
           type: number
+        totalAmountPaid:
+          type: number
         reconciliationRate:
           type: number
         openDiscrepancies:
@@ -848,6 +1357,8 @@ components:
           type: integer
         delayedShipments:
           type: integer
+        savingsFromReconciliation:
+          type: number
       required:
         - totalInvoices
         - pendingInvoices
@@ -856,11 +1367,13 @@ components:
         - totalAmountPending
         - totalAmountDisputed
         - totalAmountOverdue
+        - totalAmountPaid
         - reconciliationRate
         - openDiscrepancies
         - totalVendors
         - activeShipments
         - delayedShipments
+        - savingsFromReconciliation
 
     TrendDataPoint:
       type: object
@@ -875,4 +1388,6 @@ components:
           type: number
         disputeRate:
           type: number
-      required: [period, totalFreightCost, invoiceCount, avgInvoiceAmount, disputeRate]
+        paidAmount:
+          type: number
+      required: [period, totalFreightCost, invoiceCount, avgInvoiceAmount, disputeRate, paidAmount]

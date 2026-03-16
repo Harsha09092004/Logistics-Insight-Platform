@@ -2,7 +2,7 @@ import { useGetDashboardStats, useGetFreightTrends } from "@workspace/api-client
 import { formatCurrency } from "@/lib/utils";
 import { 
   FileText, AlertCircle, Clock, Truck, 
-  ArrowUpRight, GitCompare, Activity
+  ArrowUpRight, GitCompare, Activity, CheckCircle2, TrendingDown
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar

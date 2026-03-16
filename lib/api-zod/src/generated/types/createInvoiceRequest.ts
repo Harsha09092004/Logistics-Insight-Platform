@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * FreightFlow - Freight Invoice Automation & Reconciliation API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 
 export interface CreateInvoiceRequest {
@@ -19,4 +19,6 @@ export interface CreateInvoiceRequest {
   fuelSurcharge?: number | null;
   otherCharges?: number | null;
   gstAmount?: number | null;
+  tdsAmount?: number | null;
+  hsnCode?: string | null;
 }

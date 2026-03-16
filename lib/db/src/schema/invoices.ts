@@ -19,6 +19,8 @@ export const invoicesTable = pgTable("invoices", {
   fuelSurcharge: numeric("fuel_surcharge", { precision: 12, scale: 2 }),
   otherCharges: numeric("other_charges", { precision: 12, scale: 2 }),
   gstAmount: numeric("gst_amount", { precision: 12, scale: 2 }),
+  tdsAmount: numeric("tds_amount", { precision: 12, scale: 2 }),
+  hsnCode: text("hsn_code"),
   discrepancyNotes: text("discrepancy_notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
