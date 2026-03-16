@@ -3,10 +3,19 @@
  * Do not edit manually.
  * Api
  * FreightFlow - Freight Invoice Automation & Reconciliation API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 
+export * from "./agingBucket";
+export * from "./agingDetail";
+export * from "./agingReport";
+export * from "./authUser";
+export * from "./bulkUpdateInvoicesRequest";
+export * from "./bulkUpdateInvoicesRequestAction";
+export * from "./bulkUpdateResult";
 export * from "./createInvoiceRequest";
+export * from "./createPaymentRequest";
+export * from "./createPaymentRequestPaymentMethod";
 export * from "./createShipmentRequest";
 export * from "./createVendorRequest";
 export * from "./createVendorRequestCategory";
@@ -14,8 +23,14 @@ export * from "./dashboardStats";
 export * from "./discrepancy";
 export * from "./discrepancyStatus";
 export * from "./discrepancyType";
+export * from "./exchangeMobileAuthorizationCodeBody";
+export * from "./exchangeMobileAuthorizationCodeResponse";
+export * from "./exportInvoicesCsvParams";
 export * from "./getFreightTrendsParams";
 export * from "./getFreightTrendsPeriod";
+export * from "./getGstReportParams";
+export * from "./gstReport";
+export * from "./gstVendorLine";
 export * from "./healthStatus";
 export * from "./invoice";
 export * from "./invoiceListResponse";
@@ -24,8 +39,12 @@ export * from "./listDiscrepanciesParams";
 export * from "./listDiscrepanciesStatus";
 export * from "./listInvoicesParams";
 export * from "./listInvoicesStatus";
+export * from "./listPaymentsParams";
 export * from "./listShipmentsParams";
 export * from "./listShipmentsStatus";
+export * from "./logoutMobileSessionResponse";
+export * from "./payment";
+export * from "./paymentPaymentMethod";
 export * from "./reconciliationDetail";
 export * from "./reconciliationRequest";
 export * from "./reconciliationResult";
@@ -41,3 +60,4 @@ export * from "./updateShipmentRequestStatus";
 export * from "./updateVendorRequest";
 export * from "./vendor";
 export * from "./vendorCategory";
+export * from "./vendorPerformance";

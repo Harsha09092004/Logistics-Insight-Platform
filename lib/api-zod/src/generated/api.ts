@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * FreightFlow - Freight Invoice Automation & Reconciliation API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import * as zod from "zod";
 
@@ -12,6 +12,44 @@ import * as zod from "zod";
  */
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
+});
+
+/**
+ * @summary Get current authenticated user
+ */
+export const GetCurrentAuthUserResponse = zod.object({
+  id: zod.string(),
+  name: zod.string().nullish(),
+  profileImage: zod.string().nullish(),
+  username: zod.string().nullish(),
+});
+
+/**
+ * @summary Exchange mobile auth code for session token
+ */
+export const ExchangeMobileAuthorizationCodeBody = zod.object({
+  code: zod.string(),
+  codeVerifier: zod.string(),
+  state: zod.string(),
+  nonce: zod.string(),
+  redirectUri: zod.string(),
+});
+
+export const ExchangeMobileAuthorizationCodeResponse = zod.object({
+  sessionToken: zod.string(),
+  user: zod.object({
+    id: zod.string(),
+    name: zod.string().nullish(),
+    profileImage: zod.string().nullish(),
+    username: zod.string().nullish(),
+  }),
+});
+
+/**
+ * @summary Logout mobile session
+ */
+export const LogoutMobileSessionResponse = zod.object({
+  success: zod.boolean(),
 });
 
 /**
@@ -51,7 +89,10 @@ export const ListInvoicesResponse = zod.object({
       fuelSurcharge: zod.number().nullish(),
       otherCharges: zod.number().nullish(),
       gstAmount: zod.number().nullish(),
+      tdsAmount: zod.number().nullish(),
+      hsnCode: zod.string().nullish(),
       discrepancyNotes: zod.string().nullish(),
+      daysOverdue: zod.number().nullish(),
       createdAt: zod.date(),
       updatedAt: zod.date(),
     }),
@@ -79,6 +120,8 @@ export const CreateInvoiceBody = zod.object({
   fuelSurcharge: zod.number().nullish(),
   otherCharges: zod.number().nullish(),
   gstAmount: zod.number().nullish(),
+  tdsAmount: zod.number().nullish(),
+  hsnCode: zod.string().nullish(),
 });
 
 /**
@@ -106,7 +149,10 @@ export const GetInvoiceResponse = zod.object({
   fuelSurcharge: zod.number().nullish(),
   otherCharges: zod.number().nullish(),
   gstAmount: zod.number().nullish(),
+  tdsAmount: zod.number().nullish(),
+  hsnCode: zod.string().nullish(),
   discrepancyNotes: zod.string().nullish(),
+  daysOverdue: zod.number().nullish(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -128,6 +174,8 @@ export const UpdateInvoiceBody = zod.object({
   fuelSurcharge: zod.number().nullish(),
   otherCharges: zod.number().nullish(),
   gstAmount: zod.number().nullish(),
+  tdsAmount: zod.number().nullish(),
+  hsnCode: zod.string().nullish(),
 });
 
 export const updateInvoiceResponseCurrencyDefault = `INR`;
@@ -148,7 +196,10 @@ export const UpdateInvoiceResponse = zod.object({
   fuelSurcharge: zod.number().nullish(),
   otherCharges: zod.number().nullish(),
   gstAmount: zod.number().nullish(),
+  tdsAmount: zod.number().nullish(),
+  hsnCode: zod.string().nullish(),
   discrepancyNotes: zod.string().nullish(),
+  daysOverdue: zod.number().nullish(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -158,6 +209,28 @@ export const UpdateInvoiceResponse = zod.object({
  */
 export const DeleteInvoiceParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Bulk update multiple invoices
+ */
+export const BulkUpdateInvoicesBody = zod.object({
+  invoiceIds: zod.array(zod.number()),
+  action: zod.enum([
+    "mark_paid",
+    "mark_overdue",
+    "mark_disputed",
+    "delete",
+    "reconcile",
+  ]),
+  notes: zod.string().nullish(),
+});
+
+export const BulkUpdateInvoicesResponse = zod.object({
+  processed: zod.number(),
+  succeeded: zod.number(),
+  failed: zod.number(),
+  message: zod.string(),
 });
 
 /**
@@ -256,6 +329,27 @@ export const UpdateVendorResponse = zod.object({
   totalInvoices: zod.number().nullish(),
   totalAmountDue: zod.number().nullish(),
   createdAt: zod.date(),
+});
+
+/**
+ * @summary Get vendor performance metrics
+ */
+export const GetVendorPerformanceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetVendorPerformanceResponse = zod.object({
+  vendorId: zod.number(),
+  vendorName: zod.string(),
+  category: zod.string(),
+  totalInvoices: zod.number(),
+  totalAmount: zod.number(),
+  disputeRate: zod.number(),
+  onTimeDeliveryRate: zod.number(),
+  avgDelayDays: zod.number(),
+  avgInvoiceAmount: zod.number(),
+  overdueAmount: zod.number(),
+  performanceScore: zod.number().describe("0-100 score"),
 });
 
 /**
@@ -442,6 +536,156 @@ export const ResolveDiscrepancyResponse = zod.object({
 });
 
 /**
+ * @summary List all payments
+ */
+export const ListPaymentsQueryParams = zod.object({
+  vendorId: zod.coerce.number().optional(),
+  invoiceId: zod.coerce.number().optional(),
+});
+
+export const listPaymentsResponseCurrencyDefault = `INR`;
+
+export const ListPaymentsResponseItem = zod.object({
+  id: zod.number(),
+  invoiceId: zod.number(),
+  invoiceNumber: zod.string().nullish(),
+  vendorId: zod.number(),
+  vendorName: zod.string().nullish(),
+  amount: zod.number(),
+  currency: zod.string().default(listPaymentsResponseCurrencyDefault),
+  paymentDate: zod.date(),
+  paymentMethod: zod.enum([
+    "bank_transfer",
+    "cheque",
+    "upi",
+    "rtgs",
+    "neft",
+    "cash",
+  ]),
+  referenceNumber: zod.string().nullish(),
+  tdsDeducted: zod.number().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.date(),
+});
+export const ListPaymentsResponse = zod.array(ListPaymentsResponseItem);
+
+/**
+ * @summary Record a payment for an invoice
+ */
+export const createPaymentBodyPaymentMethodDefault = `bank_transfer`;
+
+export const CreatePaymentBody = zod.object({
+  invoiceId: zod.number(),
+  amount: zod.number(),
+  paymentDate: zod.date(),
+  paymentMethod: zod
+    .enum(["bank_transfer", "cheque", "upi", "rtgs", "neft", "cash"])
+    .default(createPaymentBodyPaymentMethodDefault),
+  referenceNumber: zod.string().nullish(),
+  tdsDeducted: zod.number().nullish(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Get invoice aging report (0-30, 31-60, 61-90, 90+ days)
+ */
+export const GetAgingReportResponse = zod.object({
+  current: zod.object({
+    count: zod.number(),
+    amount: zod.number(),
+    percentage: zod.number(),
+  }),
+  days30: zod.object({
+    count: zod.number(),
+    amount: zod.number(),
+    percentage: zod.number(),
+  }),
+  days60: zod.object({
+    count: zod.number(),
+    amount: zod.number(),
+    percentage: zod.number(),
+  }),
+  days90: zod.object({
+    count: zod.number(),
+    amount: zod.number(),
+    percentage: zod.number(),
+  }),
+  over90: zod.object({
+    count: zod.number(),
+    amount: zod.number(),
+    percentage: zod.number(),
+  }),
+  totalOutstanding: zod.number(),
+  details: zod.array(
+    zod.object({
+      invoiceId: zod.number(),
+      invoiceNumber: zod.string(),
+      vendorName: zod.string(),
+      amount: zod.number(),
+      dueDate: zod.string(),
+      daysOverdue: zod.number(),
+      bucket: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get GST reconciliation report
+ */
+export const GetGstReportQueryParams = zod.object({
+  month: zod.coerce.string().optional(),
+});
+
+export const GetGstReportResponse = zod.object({
+  month: zod.string(),
+  totalTaxableAmount: zod.number(),
+  totalGstCollected: zod.number(),
+  totalTdsDeducted: zod.number(),
+  invoiceCount: zod.number(),
+  gstBreakdown: zod.array(
+    zod.object({
+      vendorId: zod.number(),
+      vendorName: zod.string(),
+      gstin: zod.string().nullish(),
+      invoiceCount: zod.number(),
+      taxableAmount: zod.number(),
+      gstAmount: zod.number(),
+      tdsAmount: zod.number(),
+      hsnCodes: zod.array(zod.string()),
+    }),
+  ),
+});
+
+/**
+ * @summary Get vendor performance comparison
+ */
+export const GetVendorPerformanceReportResponseItem = zod.object({
+  vendorId: zod.number(),
+  vendorName: zod.string(),
+  category: zod.string(),
+  totalInvoices: zod.number(),
+  totalAmount: zod.number(),
+  disputeRate: zod.number(),
+  onTimeDeliveryRate: zod.number(),
+  avgDelayDays: zod.number(),
+  avgInvoiceAmount: zod.number(),
+  overdueAmount: zod.number(),
+  performanceScore: zod.number().describe("0-100 score"),
+});
+export const GetVendorPerformanceReportResponse = zod.array(
+  GetVendorPerformanceReportResponseItem,
+);
+
+/**
+ * @summary Export invoices as CSV
+ */
+export const ExportInvoicesCsvQueryParams = zod.object({
+  status: zod.coerce.string().optional(),
+  startDate: zod.coerce.string().optional(),
+  endDate: zod.coerce.string().optional(),
+});
+
+/**
  * @summary Get dashboard summary statistics
  */
 export const GetDashboardStatsResponse = zod.object({
@@ -452,11 +696,13 @@ export const GetDashboardStatsResponse = zod.object({
   totalAmountPending: zod.number(),
   totalAmountDisputed: zod.number(),
   totalAmountOverdue: zod.number(),
+  totalAmountPaid: zod.number(),
   reconciliationRate: zod.number(),
   openDiscrepancies: zod.number(),
   totalVendors: zod.number(),
   activeShipments: zod.number(),
   delayedShipments: zod.number(),
+  savingsFromReconciliation: zod.number(),
 });
 
 /**
@@ -476,5 +722,6 @@ export const GetFreightTrendsResponseItem = zod.object({
   invoiceCount: zod.number(),
   avgInvoiceAmount: zod.number(),
   disputeRate: zod.number(),
+  paidAmount: zod.number(),
 });
 export const GetFreightTrendsResponse = zod.array(GetFreightTrendsResponseItem);

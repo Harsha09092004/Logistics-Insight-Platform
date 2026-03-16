@@ -150,4 +150,46 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+router.post("/bulk", async (req, res) => {
+  const { invoiceIds, action, notes } = req.body;
+  if (!invoiceIds || !Array.isArray(invoiceIds) || invoiceIds.length === 0 || !action) {
+    return res.status(400).json({ error: "invoiceIds and action are required" });
+  }
+
+  let succeeded = 0;
+  let failed = 0;
+
+  try {
+    for (const id of invoiceIds) {
+      try {
+        let newStatus: string | undefined;
+        if (action === "mark_paid") newStatus = "paid";
+        else if (action === "mark_overdue") newStatus = "overdue";
+        else if (action === "mark_disputed") newStatus = "disputed";
+
+        if (action === "delete") {
+          await db.delete(invoicesTable).where(eq(invoicesTable.id, id));
+        } else if (newStatus) {
+          const updateData: Record<string, unknown> = { status: newStatus, updatedAt: new Date() };
+          if (notes) updateData.discrepancyNotes = notes;
+          await db.update(invoicesTable).set(updateData).where(eq(invoicesTable.id, id));
+        }
+        succeeded++;
+      } catch {
+        failed++;
+      }
+    }
+
+    res.json({
+      processed: invoiceIds.length,
+      succeeded,
+      failed,
+      message: `Bulk ${action}: ${succeeded} succeeded, ${failed} failed`,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Bulk operation failed" });
+  }
+});
+
 export default router;

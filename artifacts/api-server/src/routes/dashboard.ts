@@ -35,6 +35,20 @@ router.get("/stats", async (_req, res) => {
       .from(discrepanciesTable)
       .where(eq(discrepanciesTable.status, "open"));
 
+    const paidStats = await db
+      .select({
+        amountPaid: sql<number>`coalesce(sum(${invoicesTable.amount}::numeric), 0)`,
+      })
+      .from(invoicesTable)
+      .where(eq(invoicesTable.status, "paid"));
+
+    const discrepancyVariance = await db
+      .select({
+        totalVariance: sql<number>`coalesce(sum(${discrepanciesTable.varianceAmount}::numeric), 0)`,
+      })
+      .from(discrepanciesTable)
+      .where(eq(discrepanciesTable.status, "resolved"));
+
     const stats = invoiceStats[0];
     const ships = shipmentStats[0];
     const totalInvoices = stats.total;
@@ -49,11 +63,13 @@ router.get("/stats", async (_req, res) => {
       totalAmountPending: parseFloat(String(stats.amountPending)),
       totalAmountDisputed: parseFloat(String(stats.amountDisputed)),
       totalAmountOverdue: parseFloat(String(stats.amountOverdue)),
+      totalAmountPaid: parseFloat(String(paidStats[0].amountPaid)),
       reconciliationRate,
       openDiscrepancies: discrepancyCount[0].open,
       totalVendors: vendorCount[0].total,
       activeShipments: ships.active,
       delayedShipments: ships.delayed,
+      savingsFromReconciliation: parseFloat(String(discrepancyVariance[0].totalVariance)),
     });
   } catch (err) {
     console.error(err);

@@ -3,10 +3,34 @@
  * Do not edit manually.
  * Api
  * FreightFlow - Freight Invoice Automation & Reconciliation API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 export interface HealthStatus {
   status: string;
+}
+
+export interface ExchangeMobileAuthorizationCodeBody {
+  code: string;
+  codeVerifier: string;
+  state: string;
+  nonce: string;
+  redirectUri: string;
+}
+
+export interface AuthUser {
+  id: string;
+  name?: string | null;
+  profileImage?: string | null;
+  username?: string | null;
+}
+
+export interface ExchangeMobileAuthorizationCodeResponse {
+  sessionToken: string;
+  user: AuthUser;
+}
+
+export interface LogoutMobileSessionResponse {
+  success: boolean;
 }
 
 export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
@@ -35,7 +59,10 @@ export interface Invoice {
   fuelSurcharge?: number | null;
   otherCharges?: number | null;
   gstAmount?: number | null;
+  tdsAmount?: number | null;
+  hsnCode?: string | null;
   discrepancyNotes?: string | null;
+  daysOverdue?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,6 +87,8 @@ export interface CreateInvoiceRequest {
   fuelSurcharge?: number | null;
   otherCharges?: number | null;
   gstAmount?: number | null;
+  tdsAmount?: number | null;
+  hsnCode?: string | null;
 }
 
 export type UpdateInvoiceRequestStatus =
@@ -81,6 +110,32 @@ export interface UpdateInvoiceRequest {
   fuelSurcharge?: number | null;
   otherCharges?: number | null;
   gstAmount?: number | null;
+  tdsAmount?: number | null;
+  hsnCode?: string | null;
+}
+
+export type BulkUpdateInvoicesRequestAction =
+  (typeof BulkUpdateInvoicesRequestAction)[keyof typeof BulkUpdateInvoicesRequestAction];
+
+export const BulkUpdateInvoicesRequestAction = {
+  mark_paid: "mark_paid",
+  mark_overdue: "mark_overdue",
+  mark_disputed: "mark_disputed",
+  delete: "delete",
+  reconcile: "reconcile",
+} as const;
+
+export interface BulkUpdateInvoicesRequest {
+  invoiceIds: number[];
+  action: BulkUpdateInvoicesRequestAction;
+  notes?: string | null;
+}
+
+export interface BulkUpdateResult {
+  processed: number;
+  succeeded: number;
+  failed: number;
+  message: string;
 }
 
 export type VendorCategory =
@@ -136,6 +191,21 @@ export interface UpdateVendorRequest {
   contactPhone?: string | null;
   address?: string | null;
   paymentTermsDays?: number;
+}
+
+export interface VendorPerformance {
+  vendorId: number;
+  vendorName: string;
+  category: string;
+  totalInvoices: number;
+  totalAmount: number;
+  disputeRate: number;
+  onTimeDeliveryRate: number;
+  avgDelayDays: number;
+  avgInvoiceAmount: number;
+  overdueAmount: number;
+  /** 0-100 score */
+  performanceScore: number;
 }
 
 export type ShipmentStatus =
@@ -260,6 +330,102 @@ export interface ResolveDiscrepancyRequest {
   resolution: string;
 }
 
+export type PaymentPaymentMethod =
+  (typeof PaymentPaymentMethod)[keyof typeof PaymentPaymentMethod];
+
+export const PaymentPaymentMethod = {
+  bank_transfer: "bank_transfer",
+  cheque: "cheque",
+  upi: "upi",
+  rtgs: "rtgs",
+  neft: "neft",
+  cash: "cash",
+} as const;
+
+export interface Payment {
+  id: number;
+  invoiceId: number;
+  invoiceNumber?: string | null;
+  vendorId: number;
+  vendorName?: string | null;
+  amount: number;
+  currency: string;
+  paymentDate: string;
+  paymentMethod: PaymentPaymentMethod;
+  referenceNumber?: string | null;
+  tdsDeducted?: number | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export type CreatePaymentRequestPaymentMethod =
+  (typeof CreatePaymentRequestPaymentMethod)[keyof typeof CreatePaymentRequestPaymentMethod];
+
+export const CreatePaymentRequestPaymentMethod = {
+  bank_transfer: "bank_transfer",
+  cheque: "cheque",
+  upi: "upi",
+  rtgs: "rtgs",
+  neft: "neft",
+  cash: "cash",
+} as const;
+
+export interface CreatePaymentRequest {
+  invoiceId: number;
+  amount: number;
+  paymentDate: string;
+  paymentMethod: CreatePaymentRequestPaymentMethod;
+  referenceNumber?: string | null;
+  tdsDeducted?: number | null;
+  notes?: string | null;
+}
+
+export interface AgingBucket {
+  count: number;
+  amount: number;
+  percentage: number;
+}
+
+export interface AgingDetail {
+  invoiceId: number;
+  invoiceNumber: string;
+  vendorName: string;
+  amount: number;
+  dueDate: string;
+  daysOverdue: number;
+  bucket: string;
+}
+
+export interface AgingReport {
+  current: AgingBucket;
+  days30: AgingBucket;
+  days60: AgingBucket;
+  days90: AgingBucket;
+  over90: AgingBucket;
+  totalOutstanding: number;
+  details: AgingDetail[];
+}
+
+export interface GstVendorLine {
+  vendorId: number;
+  vendorName: string;
+  gstin?: string | null;
+  invoiceCount: number;
+  taxableAmount: number;
+  gstAmount: number;
+  tdsAmount: number;
+  hsnCodes: string[];
+}
+
+export interface GstReport {
+  month: string;
+  totalTaxableAmount: number;
+  totalGstCollected: number;
+  totalTdsDeducted: number;
+  invoiceCount: number;
+  gstBreakdown: GstVendorLine[];
+}
+
 export interface DashboardStats {
   totalInvoices: number;
   pendingInvoices: number;
@@ -268,11 +434,13 @@ export interface DashboardStats {
   totalAmountPending: number;
   totalAmountDisputed: number;
   totalAmountOverdue: number;
+  totalAmountPaid: number;
   reconciliationRate: number;
   openDiscrepancies: number;
   totalVendors: number;
   activeShipments: number;
   delayedShipments: number;
+  savingsFromReconciliation: number;
 }
 
 export interface TrendDataPoint {
@@ -281,6 +449,7 @@ export interface TrendDataPoint {
   invoiceCount: number;
   avgInvoiceAmount: number;
   disputeRate: number;
+  paidAmount: number;
 }
 
 export type ListInvoicesParams = {
@@ -328,6 +497,24 @@ export const ListDiscrepanciesStatus = {
   resolved: "resolved",
   escalated: "escalated",
 } as const;
+
+export type ListPaymentsParams = {
+  vendorId?: number;
+  invoiceId?: number;
+};
+
+export type GetGstReportParams = {
+  /**
+   * YYYY-MM format
+   */
+  month?: string;
+};
+
+export type ExportInvoicesCsvParams = {
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+};
 
 export type GetFreightTrendsParams = {
   period?: GetFreightTrendsPeriod;
