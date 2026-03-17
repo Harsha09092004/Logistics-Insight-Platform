@@ -59,18 +59,26 @@ export default function Dashboard() {
       </div>
 
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatCard 
             title="Total Pending Amount" 
             value={formatCurrency(stats.totalAmountPending)} 
-            subValue={`${stats.pendingInvoices} invoices`}
+            subValue={`${stats.pendingInvoices} invoices pending`}
             icon={FileText} 
             className="border-primary/20 primary"
           />
           <StatCard 
+            title="Total Amount Paid" 
+            value={formatCurrency(stats.totalAmountPaid ?? 0)} 
+            subValue={`${stats.totalInvoices - stats.pendingInvoices - stats.disputedInvoices} cleared`}
+            icon={CheckCircle2} 
+            trend="Payments up"
+            className="border-emerald-200"
+          />
+          <StatCard 
             title="Disputed Amount" 
             value={formatCurrency(stats.totalAmountDisputed)} 
-            subValue={`${stats.disputedInvoices} invoices`}
+            subValue={`${stats.disputedInvoices} invoices in dispute`}
             icon={AlertCircle} 
             className="border-rose-200"
           />
@@ -83,9 +91,17 @@ export default function Dashboard() {
             className=""
           />
           <StatCard 
+            title="Savings from Reconciliation" 
+            value={formatCurrency(stats.savingsFromReconciliation ?? 0)} 
+            subValue="Variance recovered"
+            icon={TrendingDown} 
+            trend="Cost saved"
+            className="border-violet-200"
+          />
+          <StatCard 
             title="Active Shipments" 
             value={stats.activeShipments} 
-            subValue={`${stats.delayedShipments} delayed`}
+            subValue={`${stats.totalVendors} vendors · ${stats.delayedShipments} delayed`}
             icon={Truck} 
             className=""
           />

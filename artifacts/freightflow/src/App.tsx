@@ -13,26 +13,32 @@ import Payments from "@/pages/payments";
 import AgingReport from "@/pages/reports/aging";
 import GstReport from "@/pages/reports/gst";
 import VendorPerformance from "@/pages/reports/vendor-performance";
+import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
 function Router() {
   return (
-    <AppLayout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/invoices" component={Invoices} />
-        <Route path="/vendors" component={Vendors} />
-        <Route path="/shipments" component={Shipments} />
-        <Route path="/reconciliation" component={Reconciliation} />
-        <Route path="/payments" component={Payments} />
-        <Route path="/reports/aging" component={AgingReport} />
-        <Route path="/reports/gst" component={GstReport} />
-        <Route path="/reports/vendor-performance" component={VendorPerformance} />
-        <Route component={NotFound} />
-      </Switch>
-    </AppLayout>
+    <Switch>
+      <Route path="/landing" component={Landing} />
+      <Route>
+        <AppLayout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/invoices" component={Invoices} />
+            <Route path="/vendors" component={Vendors} />
+            <Route path="/shipments" component={Shipments} />
+            <Route path="/reconciliation" component={Reconciliation} />
+            <Route path="/payments" component={Payments} />
+            <Route path="/reports/aging" component={AgingReport} />
+            <Route path="/reports/gst" component={GstReport} />
+            <Route path="/reports/vendor-performance" component={VendorPerformance} />
+            <Route component={NotFound} />
+          </Switch>
+        </AppLayout>
+      </Route>
+    </Switch>
   );
 }
 
