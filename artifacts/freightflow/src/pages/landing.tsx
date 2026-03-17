@@ -186,7 +186,7 @@ export default function Landing() {
               href="/"
               className="flex items-center gap-2 px-8 py-4 bg-blue-500 hover:bg-blue-400 text-white font-bold text-lg rounded-2xl transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5"
             >
-              Start Free 14-Day Trial
+              Start Free 3-Day Trial
               <ArrowRight className="w-5 h-5" />
             </Link>
             <a
@@ -291,7 +291,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Simple, transparent pricing</h2>
-            <p className="text-xl text-gray-500">All plans include a 14-day free trial. GST invoice provided for all subscriptions.</p>
+            <p className="text-xl text-gray-500">All plans include a 3-day free trial. GST invoice provided for all subscriptions.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
             {PLANS.map(plan => (
@@ -346,7 +346,7 @@ export default function Landing() {
             className="inline-flex items-center gap-3 px-10 py-5 bg-white text-blue-700 font-bold text-xl rounded-2xl hover:bg-blue-50 transition-all hover:shadow-xl hover:-translate-y-1"
           >
             <IndianRupee className="w-6 h-6" />
-            Start Your Free 14-Day Trial
+            Start Your Free 3-Day Trial
             <ArrowRight className="w-6 h-6" />
           </Link>
           <p className="text-blue-300 text-sm mt-5">No credit card · Takes 5 minutes · GST invoice provided</p>
